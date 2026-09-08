@@ -28,6 +28,22 @@ Day 2 produced a full technical blueprint before any code was written. These dec
 
 ---
 
+## Day 3 (Setup) — ⏳ IN PROGRESS — Calendar Realignment Note
+
+**Important schedule note:** The original blueprint numbered "Day 2" as project setup and "Day 3" as data models. In practice, calendar Day 2 was used for system design (architecture/schema/API/UI docs) instead, so **calendar Day 3 = the setup work originally planned for blueprint's "Day 2."** This pushes every subsequent implementation day back by one on the calendar, compressing 8 remaining content-days (original Day 3–10) into 7 remaining calendar days (Day 4–10).
+
+**Fix applied:** Day 6 (OpenAI setup + prompt design — originally a light standalone day) is merged into Day 7 (drill data models — also light) as a single combined weekday session, restoring the schedule to fit by Day 10. This is reflected in the merged "Day 6/7" section further below. No feature scope was cut — only two light, non-conflicting tasks were combined into one day.
+
+**Day 3 (Setup) progress as of this session (see DAY3-SUMMARY.md for full detail):**
+- ✅ Environment installed (.NET SDK, Node.js, VS Code)
+- ✅ Backend scaffolded, packages installed, folders created, DbContext + Program.cs wired, health check working, migration applied
+- ✅ Frontend scaffolded (pivoted from deprecated create-react-app to **Vite** — approved change, no architecture impact)
+- 🚧 Remaining before Day 3 is complete: fix CORS port (3000→5173), install React Router, build routing/nav/API client, frontend "Hello World" calling backend, JWT scaffold in `Program.cs`
+
+**Next session starts by finishing the 🚧 items above, then proceeds directly into Day 4 (Data Models) below — same day if time allows, or as its own session.**
+
+---
+
 ## Day 2 (Sun) — Tech Stack Finalization, Project Setup & Environment
 
 ### 🎯 Objective
