@@ -1,13 +1,41 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using RecoverIQ.Api.Data;
 using RecoverIQ.Api.Models;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+        Description = "Paste your JWT token here (no 'Bearer ' prefix needed)."
+    });
+    options.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+    {
+        {
+            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            {
+                Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                {
+                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
 
 // Register our database connection (SQLite via EF Core)
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -24,6 +52,28 @@ builder.Services.AddCors(options =>
     });
 });
 
+// JWT Authentication setup
+var jwtSigningKey = builder.Configuration["Jwt:SigningKey"]!;
+var jwtIssuer = builder.Configuration["Jwt:Issuer"]!;
+var jwtAudience = builder.Configuration["Jwt:Audience"]!;
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtIssuer,
+            ValidAudience = jwtAudience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSigningKey))
+        };
+    });
+
+builder.Services.AddAuthorization();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -34,10 +84,11 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors("AllowReactApp");
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
-// Seed 2 demo users on startup, only if none exist yet
+// Seed 2 demo users on startup, only if none exist yet — passwords properly hashed with BCrypt
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -46,8 +97,18 @@ using (var scope = app.Services.CreateScope())
     if (!db.Users.Any())
     {
         db.Users.AddRange(
-            new User { Username = "admin1", PasswordHash = "temp-plaintext-admin123", Role = "Admin" },
-            new User { Username = "member1", PasswordHash = "temp-plaintext-member123", Role = "TeamMember" }
+            new User
+            {
+                Username = "admin1",
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword("admin123"),
+                Role = "Admin"
+            },
+            new User
+            {
+                Username = "member1",
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword("member123"),
+                Role = "TeamMember"
+            }
         );
         db.SaveChanges();
     }
