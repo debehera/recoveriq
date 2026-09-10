@@ -3,11 +3,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using RecoverIQ.Api.Data;
 using RecoverIQ.Api.Models;
+using RecoverIQ.Api.Services;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -37,11 +37,9 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-// Register our database connection (SQLite via EF Core)
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Allow our React frontend (running on localhost:5173, Vite's default) to call this API
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp", policy =>
@@ -52,7 +50,6 @@ builder.Services.AddCors(options =>
     });
 });
 
-// JWT Authentication setup
 var jwtSigningKey = builder.Configuration["Jwt:SigningKey"]!;
 var jwtIssuer = builder.Configuration["Jwt:Issuer"]!;
 var jwtAudience = builder.Configuration["Jwt:Audience"]!;
@@ -74,9 +71,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
+builder.Services.AddHttpClient<IScenarioGeneratorService, ScenarioGeneratorService>();
+
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -88,7 +86,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
-// Seed 2 demo users on startup, only if none exist yet — passwords properly hashed with BCrypt
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();

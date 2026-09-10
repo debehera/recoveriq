@@ -2,8 +2,10 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./Login";
 import RunbookList from "./RunbookList";
 import RunbookForm from "./RunbookForm";
-import MyDrillsPlaceholder from "./MyDrillsPlaceholder";
-import DrillListPlaceholder from "./DrillListPlaceholder";
+import MyDrills from "./MyDrills";
+import DrillRunner from "./DrillRunner";
+import DrillList from "./DrillList";
+import DrillReview from "./DrillReview";
 import ProtectedRoute from "./ProtectedRoute";
 import { getSession } from "./auth";
 
@@ -31,11 +33,17 @@ export default function App() {
           <ProtectedRoute allowedRole="Admin"><RunbookForm /></ProtectedRoute>
         } />
         <Route path="/drills" element={
-          <ProtectedRoute allowedRole="Admin"><DrillListPlaceholder /></ProtectedRoute>
+          <ProtectedRoute allowedRole="Admin"><DrillList /></ProtectedRoute>
+        } />
+        <Route path="/drills/:id" element={
+          <ProtectedRoute allowedRole="Admin"><DrillReview /></ProtectedRoute>
         } />
 
         <Route path="/my-drills" element={
-          <ProtectedRoute allowedRole="TeamMember"><MyDrillsPlaceholder /></ProtectedRoute>
+          <ProtectedRoute allowedRole="TeamMember"><MyDrills /></ProtectedRoute>
+        } />
+        <Route path="/my-drills/:id" element={
+          <ProtectedRoute allowedRole="TeamMember"><DrillRunner /></ProtectedRoute>
         } />
       </Routes>
     </BrowserRouter>
