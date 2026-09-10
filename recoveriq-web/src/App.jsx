@@ -1,7 +1,9 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./Login";
-import RunbookListPlaceholder from "./RunbookListPlaceholder";
+import RunbookList from "./RunbookList";
+import RunbookForm from "./RunbookForm";
 import MyDrillsPlaceholder from "./MyDrillsPlaceholder";
+import DrillListPlaceholder from "./DrillListPlaceholder";
 import ProtectedRoute from "./ProtectedRoute";
 import { getSession } from "./auth";
 
@@ -18,22 +20,23 @@ export default function App() {
       <Routes>
         <Route path="/" element={<RootRedirect />} />
         <Route path="/login" element={<Login />} />
-        <Route
-          path="/runbooks"
-          element={
-            <ProtectedRoute allowedRole="Admin">
-              <RunbookListPlaceholder />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/my-drills"
-          element={
-            <ProtectedRoute allowedRole="TeamMember">
-              <MyDrillsPlaceholder />
-            </ProtectedRoute>
-          }
-        />
+
+        <Route path="/runbooks" element={
+          <ProtectedRoute allowedRole="Admin"><RunbookList /></ProtectedRoute>
+        } />
+        <Route path="/runbooks/new" element={
+          <ProtectedRoute allowedRole="Admin"><RunbookForm /></ProtectedRoute>
+        } />
+        <Route path="/runbooks/:id/edit" element={
+          <ProtectedRoute allowedRole="Admin"><RunbookForm /></ProtectedRoute>
+        } />
+        <Route path="/drills" element={
+          <ProtectedRoute allowedRole="Admin"><DrillListPlaceholder /></ProtectedRoute>
+        } />
+
+        <Route path="/my-drills" element={
+          <ProtectedRoute allowedRole="TeamMember"><MyDrillsPlaceholder /></ProtectedRoute>
+        } />
       </Routes>
     </BrowserRouter>
   );

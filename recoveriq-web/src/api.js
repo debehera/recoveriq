@@ -38,3 +38,57 @@ export async function login(username, password) {
     body: JSON.stringify({ username, password }),
   });
 }
+
+export async function getRunbooks() {
+  return apiFetch("/api/runbook");
+}
+
+export async function getRunbook(id) {
+  return apiFetch(`/api/runbook/${id}`);
+}
+
+export async function createRunbook(data) {
+  return apiFetch("/api/runbook", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateRunbook(id, data) {
+  return apiFetch(`/api/runbook/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteRunbook(id) {
+  return apiFetch(`/api/runbook/${id}`, {
+    method: "DELETE",
+  });
+}
+
+export async function generateDrill(runbookId, assignToUserId) {
+  return apiFetch("/api/drill/generate", {
+    method: "POST",
+    body: JSON.stringify({ runbookId, assignToUserId }),
+  });
+}
+
+export async function getDrills() {
+  return apiFetch("/api/drill");
+}
+
+export async function getDrill(id) {
+  return apiFetch(`/api/drill/${id}`);
+}
+
+export async function respondToStep(drillId, stepId, responseText) {
+  return apiFetch(`/api/drill/${drillId}/steps/${stepId}/respond`, {
+    method: "POST",
+    body: JSON.stringify({ responseText }),
+  });
+}
+
+export async function getTeamMembers() {
+  return apiFetch("/api/users/team-members");
+}
