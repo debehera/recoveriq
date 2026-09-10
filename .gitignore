@@ -427,3 +427,16 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+# Node / React
+node_modules/
+recoveriq-web/build/
+recoveriq-web/dist/
+recoveriq-web/.env
+
+# Local secrets
+RecoverIQ.Api/appsettings.Development.json
+
+# SQLite
+*.db
+*.db-shm
+*.db-wal
