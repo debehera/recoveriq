@@ -1,3 +1,5 @@
+import { color, font } from "./theme";
+
 export default function Footer() {
   return (
     <div style={styles.footer}>
@@ -9,11 +11,11 @@ export default function Footer() {
 const styles = {
   footer: {
     textAlign: "center",
-    padding: "16px",
-    fontSize: "12px",
-    color: "#8494C4",
-    backgroundColor: "#F2F4FA",
-    fontFamily: "sans-serif",
-    borderTop: "1px solid #E0E4F0",
+    padding: "18px 16px",
+    fontSize: font.size.xs,
+    color: color.textFaint,
+    backgroundColor: "#EEF1FA",
+    fontFamily: font.family,
+    borderTop: `1px solid ${color.border}`,
   },
 };

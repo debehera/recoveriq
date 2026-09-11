@@ -1,0 +1,120 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+* {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  background-color: #F7F8FC;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: #1A1D2B;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Accessible focus rings — visible on keyboard nav, not on mouse click */
+:focus {
+  outline: none;
+}
+:focus-visible {
+  outline: 2px solid #3D5AFE;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+input:focus-visible,
+textarea:focus-visible {
+  outline: none;
+  border-color: #3D5AFE !important;
+  box-shadow: 0 0 0 3px rgba(61, 90, 254, 0.15);
+}
+
+button {
+  font-family: inherit;
+}
+button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed !important;
+}
+button:not(:disabled):active {
+  transform: translateY(1px);
+}
+
+a {
+  color: #3D5AFE;
+}
+
+::selection {
+  background-color: #CADCFC;
+}
+
+/* Loading spinner */
+@keyframes riq-spin {
+  to { transform: rotate(360deg); }
+}
+.riq-spinner {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 2.5px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: riq-spin 0.7s linear infinite;
+  vertical-align: middle;
+}
+.riq-spinner-dark {
+  border: 2.5px solid rgba(30, 39, 97, 0.15);
+  border-top-color: #1E2761;
+}
+
+/* Fade-in for page content */
+@keyframes riq-fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.riq-fade-in {
+  animation: riq-fade-in 0.25s ease-out;
+}
+
+/* Responsive table wrapper — allows horizontal scroll on small screens
+   instead of breaking layout */
+.riq-table-wrap {
+  overflow-x: auto;
+  border-radius: 10px;
+  border: 1px solid #E3E7F0;
+}
+.riq-table-wrap table {
+  min-width: 560px;
+}
+
+/* Scrollbar polish (webkit browsers) */
+::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: #CADCFC;
+  border-radius: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+@media (max-width: 640px) {
+  .riq-navbar {
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 12px 16px !important;
+  }
+  .riq-navbar-center {
+    order: 3;
+    width: 100%;
+    justify-content: flex-start !important;
+  }
+}

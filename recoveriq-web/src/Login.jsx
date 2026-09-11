@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { login } from "./api";
 import { saveSession } from "./auth";
+import { color, radius, shadow, space, font } from "./theme";
+import { InlineSpinner } from "./Loading";
 
 export default function Login() {
   const [username, setUsername] = useState("");
@@ -25,7 +27,11 @@ export default function Login() {
         navigate("/my-drills");
       }
     } catch (err) {
-      setError(err.message || "Login failed. Please try again.");
+      setError(
+        err.message === "Request failed (0)" || err.message?.includes("fetch")
+          ? "Can't reach the server right now. If it's been idle, it may take up to a minute to wake up — please try again."
+          : err.message || "Login failed. Please try again."
+      );
     } finally {
       setLoading(false);
     }
@@ -33,33 +39,45 @@ export default function Login() {
 
   return (
     <div style={styles.container}>
-      <div style={styles.card}>
+      <div style={styles.card} className="riq-fade-in">
+        <div style={styles.badge}>⛨</div>
         <h1 style={styles.title}>RecoverIQ</h1>
+        <p style={styles.subtitle}>Sign in to manage recovery drills</p>
+
         <form onSubmit={handleSubmit}>
-          <div style={styles.field}>
-            <label style={styles.label}>Username</label>
-            <input
-              style={styles.input}
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              autoFocus
-            />
-          </div>
-          <div style={styles.field}>
-            <label style={styles.label}>Password</label>
-            <input
-              style={styles.input}
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </div>
+          <label style={styles.label} htmlFor="username">Username</label>
+          <input
+            id="username"
+            style={styles.input}
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            autoFocus
+            autoComplete="username"
+          />
+
+          <label style={styles.label} htmlFor="password">Password</label>
+          <input
+            id="password"
+            style={styles.input}
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            autoComplete="current-password"
+          />
+
           {error && <p style={styles.error}>{error}</p>}
-          <button style={styles.button} type="submit" disabled={loading}>
-            {loading ? "Logging in..." : "Log In"}
+
+          <button style={{ ...styles.button, ...(loading ? styles.buttonDisabled : {}) }} type="submit" disabled={loading}>
+            {loading ? (<><InlineSpinner /> Logging in...</>) : "Log In"}
           </button>
         </form>
+
+        <div style={styles.demoBox}>
+          <p style={styles.demoTitle}>Demo accounts</p>
+          <p style={styles.demoLine}><strong>Admin:</strong> admin1 / admin123</p>
+          <p style={styles.demoLine}><strong>Team Member:</strong> member1 / member123</p>
+        </div>
       </div>
     </div>
   );
@@ -70,54 +88,107 @@ const styles = {
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
-    height: "100vh",
-    backgroundColor: "#F2F4FA",
-    fontFamily: "sans-serif",
+    minHeight: "100vh",
+    backgroundColor: color.bg,
+    backgroundImage: `radial-gradient(circle at 20% 20%, ${color.ice}33, transparent 40%), radial-gradient(circle at 80% 80%, ${color.ice}33, transparent 40%)`,
+    fontFamily: font.family,
+    padding: space.lg,
   },
   card: {
-    backgroundColor: "#fff",
-    padding: "40px",
-    borderRadius: "10px",
-    boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
-    width: "320px",
+    backgroundColor: color.card,
+    padding: "40px 36px",
+    borderRadius: radius.lg,
+    boxShadow: shadow.lg,
+    width: "360px",
+    border: `1px solid ${color.border}`,
+  },
+  badge: {
+    width: "44px",
+    height: "44px",
+    borderRadius: radius.md,
+    backgroundColor: color.navy,
+    color: color.ice,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: "20px",
+    marginBottom: space.md,
   },
   title: {
-    textAlign: "center",
-    color: "#1E2761",
-    marginBottom: "24px",
+    fontSize: font.size.xxl,
+    fontWeight: 700,
+    color: color.navy,
+    margin: 0,
+    letterSpacing: "-0.02em",
   },
-  field: {
-    marginBottom: "16px",
+  subtitle: {
+    fontSize: font.size.sm,
+    color: color.textMuted,
+    marginTop: "6px",
+    marginBottom: space.lg,
   },
   label: {
     display: "block",
-    marginBottom: "6px",
-    fontSize: "14px",
-    color: "#333",
+    marginBottom: space.xs,
+    fontSize: font.size.sm,
+    fontWeight: 600,
+    color: color.textMuted,
   },
   input: {
     width: "100%",
-    padding: "10px",
-    borderRadius: "6px",
-    border: "1px solid #ccc",
+    padding: "11px 14px",
+    borderRadius: radius.sm,
+    border: `1px solid ${color.border}`,
     boxSizing: "border-box",
-    fontSize: "14px",
+    fontSize: font.size.md,
+    marginBottom: space.md,
+    fontFamily: font.family,
   },
   button: {
     width: "100%",
     padding: "12px",
-    borderRadius: "6px",
+    borderRadius: radius.sm,
     border: "none",
-    backgroundColor: "#1E2761",
+    backgroundColor: color.navy,
     color: "#fff",
-    fontSize: "15px",
-    fontWeight: "bold",
+    fontSize: font.size.md,
+    fontWeight: 700,
     cursor: "pointer",
-    marginTop: "8px",
+    marginTop: space.xs,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "8px",
+  },
+  buttonDisabled: {
+    backgroundColor: color.navyLight,
   },
   error: {
-    color: "#C0392B",
-    fontSize: "13px",
-    marginBottom: "12px",
+    color: color.danger,
+    backgroundColor: color.dangerBg,
+    padding: `${space.sm} ${space.md}`,
+    borderRadius: radius.sm,
+    fontSize: font.size.sm,
+    marginBottom: space.md,
+    lineHeight: 1.4,
+  },
+  demoBox: {
+    marginTop: space.lg,
+    paddingTop: space.md,
+    borderTop: `1px solid ${color.border}`,
+  },
+  demoTitle: {
+    fontSize: font.size.xs,
+    fontWeight: 700,
+    color: color.textFaint,
+    textTransform: "uppercase",
+    letterSpacing: "0.04em",
+    margin: 0,
+    marginBottom: "8px",
+  },
+  demoLine: {
+    fontSize: font.size.sm,
+    color: color.textMuted,
+    margin: "4px 0",
   },
 };

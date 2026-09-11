@@ -3,6 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { getDrills } from "./api";
 import NavBar from "./NavBar";
 import Footer from "./Footer";
+import { PageLoading } from "./Loading";
+import { color, font, radius, space, shared } from "./theme";
+
+const STATUS_MAP = {
+  Generated: { label: "Not Started", bg: color.warningBg, fg: color.warning },
+  InProgress: { label: "In Progress", bg: "#E7EEFE", fg: color.accent },
+  Completed: { label: "Completed", bg: color.successBg, fg: color.success },
+};
 
 export default function MyDrills() {
   const [drills, setDrills] = useState([]);
@@ -17,14 +25,8 @@ export default function MyDrills() {
       .finally(() => setLoading(false));
   }, []);
 
-  function statusLabel(status) {
-    if (status === "Generated") return "Not Started";
-    if (status === "InProgress") return "In Progress";
-    return "Completed";
-  }
-
   function actionLabel(status) {
-    if (status === "Generated") return "Start";
+    if (status === "Generated") return "Start Drill";
     if (status === "InProgress") return "Continue";
     return "Review";
   }
@@ -32,38 +34,43 @@ export default function MyDrills() {
   return (
     <div>
       <NavBar />
-      <div style={styles.page}>
-        <h2>My Drills</h2>
-        {error && <p style={styles.error}>{error}</p>}
-        {loading && <p>Loading...</p>}
+      <div style={shared.page} className="riq-fade-in">
+        <h1 style={shared.h1}>My Drills</h1>
+        <p style={styles.subtitle}>Tabletop exercises assigned to you</p>
+
+        {error && <p style={{ ...shared.errorBox, marginTop: space.md }}>{error}</p>}
+        {loading && <PageLoading label="Loading your drills..." />}
+
         {!loading && drills.length === 0 && (
-          <p style={styles.empty}>No drills assigned to you yet.</p>
+          <div style={styles.emptyCard}>
+            <div style={styles.emptyIcon}>🧭</div>
+            <p style={styles.emptyTitle}>No drills assigned yet</p>
+            <p style={styles.emptyText}>When an admin generates a drill and assigns it to you, it will show up here.</p>
+          </div>
         )}
+
         {!loading && drills.length > 0 && (
-          <table style={styles.table}>
-            <thead>
-              <tr style={styles.trHead}>
-                <th style={styles.th}>Title</th>
-                <th style={styles.th}>Runbook</th>
-                <th style={styles.th}>Status</th>
-                <th style={styles.th}></th>
-              </tr>
-            </thead>
-            <tbody>
-              {drills.map((d) => (
-                <tr key={d.id} style={styles.tr}>
-                  <td style={styles.td}>{d.title}</td>
-                  <td style={styles.td}>{d.runbookName}</td>
-                  <td style={styles.td}>{statusLabel(d.status)}</td>
-                  <td style={styles.td}>
-                    <button style={styles.actionBtn} onClick={() => navigate(`/my-drills/${d.id}`)}>
-                      {actionLabel(d.status)}
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div style={styles.list}>
+            {drills.map((d) => {
+              const status = STATUS_MAP[d.status] || STATUS_MAP.Generated;
+              return (
+                <div key={d.id} style={styles.cardRow}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={styles.cardTitleRow}>
+                      <p style={styles.cardTitle}>{d.title}</p>
+                      <span style={{ ...styles.badge, backgroundColor: status.bg, color: status.fg }}>
+                        {status.label}
+                      </span>
+                    </div>
+                    <p style={styles.cardMeta}>Runbook: {d.runbookName}</p>
+                  </div>
+                  <button style={shared.btnPrimary} onClick={() => navigate(`/my-drills/${d.id}`)}>
+                    {actionLabel(d.status)}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
         )}
       </div>
       <Footer />
@@ -72,16 +79,25 @@ export default function MyDrills() {
 }
 
 const styles = {
-  page: { padding: "32px", fontFamily: "sans-serif", minHeight: "80vh" },
-  error: { color: "#C0392B", backgroundColor: "#FDEDEC", padding: "10px", borderRadius: "6px" },
-  empty: { color: "#666" },
-  table: { width: "100%", borderCollapse: "collapse", marginTop: "10px" },
-  trHead: { backgroundColor: "#1E2761", color: "#fff" },
-  th: { textAlign: "left", padding: "10px 12px" },
-  tr: { borderBottom: "1px solid #eee" },
-  td: { padding: "10px 12px" },
-  actionBtn: {
-    padding: "6px 14px", borderRadius: "5px", border: "none",
-    backgroundColor: "#3D5AFE", color: "#fff", cursor: "pointer", fontSize: "13px",
+  subtitle: { fontSize: font.size.sm, color: color.textMuted, margin: "4px 0 24px" },
+  list: { display: "flex", flexDirection: "column", gap: space.sm },
+  cardRow: {
+    ...shared.card,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: `${space.md} ${space.lg}`,
+    gap: space.md,
+    flexWrap: "wrap",
   },
+  cardTitleRow: { display: "flex", alignItems: "center", gap: space.sm, flexWrap: "wrap" },
+  cardTitle: { fontSize: font.size.lg, fontWeight: 700, color: color.text, margin: 0 },
+  cardMeta: { fontSize: font.size.sm, color: color.textMuted, margin: "4px 0 0" },
+  badge: {
+    fontSize: font.size.xs, fontWeight: 700, padding: "3px 10px", borderRadius: radius.pill,
+  },
+  emptyCard: { ...shared.card, textAlign: "center", padding: `${space.xxl} ${space.lg}` },
+  emptyIcon: { fontSize: "36px", marginBottom: space.sm },
+  emptyTitle: { fontSize: font.size.lg, fontWeight: 700, color: color.text, margin: 0 },
+  emptyText: { fontSize: font.size.sm, color: color.textMuted, maxWidth: "360px", margin: "8px auto 0" },
 };

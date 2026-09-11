@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { getRunbooks, deleteRunbook, generateDrill, getTeamMembers } from "./api";
 import NavBar from "./NavBar";
 import Footer from "./Footer";
+import { PageLoading, InlineSpinner } from "./Loading";
+import { color, font, radius, space, shared } from "./theme";
 
 export default function RunbookList() {
   const [runbooks, setRunbooks] = useState([]);
@@ -30,8 +32,8 @@ export default function RunbookList() {
     load();
   }, []);
 
-  async function handleDelete(id) {
-    if (!window.confirm("Delete this runbook? This cannot be undone.")) return;
+  async function handleDelete(id, name) {
+    if (!window.confirm(`Delete "${name}"? This cannot be undone.`)) return;
     try {
       await deleteRunbook(id);
       load();
@@ -50,8 +52,7 @@ export default function RunbookList() {
     try {
       const assignToUserId = teamMembers[0].id;
       const drill = await generateDrill(runbookId, assignToUserId);
-      alert(`Drill "${drill.title}" generated and assigned to ${teamMembers[0].username}!`);
-      navigate("/drills");
+      navigate("/drills", { state: { justGenerated: drill.title, assignedTo: teamMembers[0].username } });
     } catch (err) {
       setError(err.message);
     } finally {
@@ -62,61 +63,74 @@ export default function RunbookList() {
   return (
     <div>
       <NavBar />
-      <div style={styles.page}>
+      <div style={shared.page} className="riq-fade-in">
         <div style={styles.headerRow}>
-          <h2>Runbooks</h2>
-          <button style={styles.newBtn} onClick={() => navigate("/runbooks/new")}>
+          <div>
+            <h1 style={shared.h1}>Runbooks</h1>
+            <p style={styles.subtitle}>Documented recovery plans for your critical systems</p>
+          </div>
+          <button style={shared.btnPrimary} onClick={() => navigate("/runbooks/new")}>
             + New Runbook
           </button>
         </div>
 
-        {error && <p style={styles.error}>{error}</p>}
-        {loading && <p>Loading...</p>}
+        {error && <p style={{ ...shared.errorBox, marginBottom: space.md }}>{error}</p>}
+
+        {loading && <PageLoading label="Loading runbooks..." />}
 
         {!loading && runbooks.length === 0 && (
-          <p style={styles.empty}>No runbooks yet. Create your first one to get started.</p>
+          <div style={styles.emptyCard}>
+            <div style={styles.emptyIcon}>📘</div>
+            <p style={styles.emptyTitle}>No runbooks yet</p>
+            <p style={styles.emptyText}>Create your first recovery plan to start generating AI-powered tabletop drills.</p>
+            <button style={{ ...shared.btnPrimary, marginTop: space.md }} onClick={() => navigate("/runbooks/new")}>
+              + New Runbook
+            </button>
+          </div>
         )}
 
         {!loading && runbooks.length > 0 && (
-          <table style={styles.table}>
-            <thead>
-              <tr style={styles.trHead}>
-                <th style={styles.th}>Name</th>
-                <th style={styles.th}>System</th>
-                <th style={styles.th}>RTO</th>
-                <th style={styles.th}>RPO</th>
-                <th style={styles.th}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {runbooks.map((rb) => (
-                <tr key={rb.id} style={styles.tr}>
-                  <td style={styles.td}>{rb.name}</td>
-                  <td style={styles.td}>{rb.systemName}</td>
-                  <td style={styles.td}>{rb.rtoMinutes}m</td>
-                  <td style={styles.td}>{rb.rpoMinutes}m</td>
-                  <td style={styles.td}>
-                    <button style={styles.actionBtn} onClick={() => navigate(`/runbooks/${rb.id}/edit`)}>
-                      Edit
-                    </button>
-                    <button
-                      style={{ ...styles.actionBtn, ...styles.generateBtn }}
-                      onClick={() => handleGenerate(rb.id)}
-                      disabled={generatingId === rb.id}
-                    >
-                      {generatingId === rb.id ? "Generating..." : "Generate Drill"}
-                    </button>
-                    <button
-                      style={{ ...styles.actionBtn, ...styles.deleteBtn }}
-                      onClick={() => handleDelete(rb.id)}
-                    >
-                      Delete
-                    </button>
-                  </td>
+          <div className="riq-table-wrap" style={styles.tableWrap}>
+            <table style={styles.table}>
+              <thead>
+                <tr>
+                  <th style={styles.th}>Name</th>
+                  <th style={styles.th}>System</th>
+                  <th style={styles.th}>RTO</th>
+                  <th style={styles.th}>RPO</th>
+                  <th style={{ ...styles.th, textAlign: "right" }}>Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {runbooks.map((rb) => (
+                  <tr key={rb.id} style={styles.tr}>
+                    <td style={{ ...styles.td, fontWeight: 600 }}>{rb.name}</td>
+                    <td style={styles.td}>{rb.systemName}</td>
+                    <td style={styles.td}><span style={styles.pill}>{rb.rtoMinutes}m</span></td>
+                    <td style={styles.td}><span style={styles.pill}>{rb.rpoMinutes}m</span></td>
+                    <td style={{ ...styles.td, textAlign: "right", whiteSpace: "nowrap" }}>
+                      <button style={styles.actionBtn} onClick={() => navigate(`/runbooks/${rb.id}/edit`)}>
+                        Edit
+                      </button>
+                      <button
+                        style={{ ...styles.actionBtn, ...styles.generateBtn }}
+                        onClick={() => handleGenerate(rb.id)}
+                        disabled={generatingId === rb.id}
+                      >
+                        {generatingId === rb.id ? (<><InlineSpinner /> Generating...</>) : "Generate Drill"}
+                      </button>
+                      <button
+                        style={{ ...styles.actionBtn, ...styles.deleteBtn }}
+                        onClick={() => handleDelete(rb.id, rb.name)}
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
       <Footer />
@@ -125,23 +139,79 @@ export default function RunbookList() {
 }
 
 const styles = {
-  page: { padding: "32px", fontFamily: "sans-serif", minHeight: "80vh" },
-  headerRow: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" },
-  newBtn: {
-    padding: "10px 18px", borderRadius: "6px", border: "none",
-    backgroundColor: "#1E2761", color: "#fff", cursor: "pointer", fontWeight: "bold",
+  headerRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: space.lg,
+    gap: space.md,
+    flexWrap: "wrap",
   },
-  error: { color: "#C0392B", backgroundColor: "#FDEDEC", padding: "10px", borderRadius: "6px" },
-  empty: { color: "#666" },
-  table: { width: "100%", borderCollapse: "collapse", marginTop: "10px" },
-  trHead: { backgroundColor: "#1E2761", color: "#fff" },
-  th: { textAlign: "left", padding: "10px 12px" },
-  tr: { borderBottom: "1px solid #eee" },
-  td: { padding: "10px 12px" },
+  subtitle: {
+    fontSize: font.size.sm,
+    color: color.textMuted,
+    margin: "4px 0 0",
+  },
+  tableWrap: {
+    backgroundColor: color.card,
+  },
+  table: { width: "100%", borderCollapse: "collapse" },
+  th: {
+    textAlign: "left",
+    padding: "12px 16px",
+    fontSize: font.size.xs,
+    fontWeight: 700,
+    color: color.textMuted,
+    textTransform: "uppercase",
+    letterSpacing: "0.04em",
+    backgroundColor: color.cardMuted,
+    borderBottom: `1px solid ${color.border}`,
+  },
+  tr: {
+    borderBottom: `1px solid ${color.border}`,
+  },
+  td: {
+    padding: "14px 16px",
+    fontSize: font.size.md,
+    color: color.text,
+  },
+  pill: {
+    backgroundColor: color.cardMuted,
+    padding: "3px 10px",
+    borderRadius: radius.pill,
+    fontSize: font.size.sm,
+    color: color.textMuted,
+    fontWeight: 500,
+  },
   actionBtn: {
-    marginRight: "8px", padding: "6px 12px", borderRadius: "5px", border: "1px solid #ccc",
-    backgroundColor: "#fff", cursor: "pointer", fontSize: "13px",
+    marginLeft: "8px",
+    padding: "7px 13px",
+    borderRadius: radius.sm,
+    border: `1px solid ${color.border}`,
+    backgroundColor: "#fff",
+    cursor: "pointer",
+    fontSize: font.size.sm,
+    fontWeight: 500,
+    color: color.text,
   },
-  generateBtn: { backgroundColor: "#3D5AFE", color: "#fff", border: "none" },
-  deleteBtn: { backgroundColor: "#C0392B", color: "#fff", border: "none" },
+  generateBtn: {
+    backgroundColor: color.accent,
+    color: "#fff",
+    border: "none",
+    display: "inline-flex",
+    alignItems: "center",
+  },
+  deleteBtn: {
+    backgroundColor: color.dangerBg,
+    color: color.danger,
+    border: "none",
+  },
+  emptyCard: {
+    ...shared.card,
+    textAlign: "center",
+    padding: `${space.xxl} ${space.lg}`,
+  },
+  emptyIcon: { fontSize: "36px", marginBottom: space.sm },
+  emptyTitle: { fontSize: font.size.lg, fontWeight: 700, color: color.text, margin: 0 },
+  emptyText: { fontSize: font.size.sm, color: color.textMuted, maxWidth: "360px", margin: "8px auto 0" },
 };

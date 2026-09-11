@@ -3,6 +3,8 @@ import { useNavigate, useParams } from "react-router-dom";
 import { getDrill, respondToStep } from "./api";
 import NavBar from "./NavBar";
 import Footer from "./Footer";
+import { PageLoading, InlineSpinner } from "./Loading";
+import { color, font, radius, space, shared, shadow } from "./theme";
 
 export default function DrillRunner() {
   const { id } = useParams();
@@ -17,6 +19,7 @@ export default function DrillRunner() {
 
   useEffect(() => {
     load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   async function load() {
@@ -56,41 +59,67 @@ export default function DrillRunner() {
     }
   }
 
-  if (loading) return <PageWrap><p>Loading...</p></PageWrap>;
-  if (error && !drill) return <PageWrap><p style={styles.error}>{error}</p></PageWrap>;
+  if (loading) {
+    return (
+      <PageWrap>
+        <PageLoading label="Loading drill..." />
+      </PageWrap>
+    );
+  }
+  if (error && !drill) {
+    return (
+      <PageWrap>
+        <p style={shared.errorBox}>{error}</p>
+      </PageWrap>
+    );
+  }
   if (!drill) return null;
 
   const step = drill.steps[currentIndex];
   const isCompleted = drill.status === "Completed";
+  const answeredCount = drill.steps.filter((s) => s.response).length;
 
   return (
     <PageWrap>
       <button style={styles.backBtn} onClick={() => navigate("/my-drills")}>← Back to My Drills</button>
-      <h2>{drill.title}</h2>
+
+      <h1 style={shared.h1}>{drill.title}</h1>
       <p style={styles.premise}>{drill.premise}</p>
 
-      <div style={styles.progress}>
-        Step {currentIndex + 1} of {drill.steps.length}
-        {" "}
-        {drill.steps.map((s, i) => (
-          <span key={s.id} style={{ ...styles.dot, backgroundColor: s.response ? "#1E2761" : "#ccc" }} />
-        ))}
+      <div style={styles.progressRow}>
+        <span style={styles.progressLabel}>Step {currentIndex + 1} of {drill.steps.length}</span>
+        <div style={styles.dots}>
+          {drill.steps.map((s, i) => (
+            <span
+              key={s.id}
+              style={{
+                ...styles.dot,
+                backgroundColor: s.response ? color.navy : color.border,
+                ...(i === currentIndex ? styles.dotActive : {}),
+              }}
+            />
+          ))}
+        </div>
+        <span style={styles.progressCount}>{answeredCount}/{drill.steps.length} answered</span>
       </div>
 
-      {isCompleted && currentIndex === drill.steps.length - 1 && step.response && (
-        <p style={styles.completeBanner}>✅ This drill is complete. Thank you for participating.</p>
+      {isCompleted && (
+        <div style={styles.completeBanner}>
+          <span style={{ fontSize: "16px" }}>✅</span>
+          <span>This drill is complete. Thank you for participating.</span>
+        </div>
       )}
 
-      <div style={styles.stepCard}>
-        <p style={styles.situationLabel}>Situation</p>
+      <div style={styles.stepCard} className="riq-fade-in" key={step.id}>
+        <p style={styles.sectionLabel}>Situation</p>
         <p style={styles.situation}>{step.situation}</p>
-        <p style={styles.questionLabel}>Question</p>
+        <p style={styles.sectionLabel}>Question</p>
         <p style={styles.question}>{step.question}</p>
 
         {step.response ? (
           <div style={styles.answeredBox}>
-            <p style={styles.answeredLabel}>Your response:</p>
-            <p>{step.response.responseText}</p>
+            <p style={styles.answeredLabel}>Your response</p>
+            <p style={styles.answeredText}>{step.response.responseText}</p>
           </div>
         ) : (
           <form onSubmit={handleSubmit}>
@@ -100,10 +129,11 @@ export default function DrillRunner() {
               value={responseText}
               onChange={(e) => setResponseText(e.target.value)}
               placeholder="Describe what you would do..."
+              autoFocus
             />
-            {error && <p style={styles.error}>{error}</p>}
-            <button type="submit" style={styles.submitBtn} disabled={submitting}>
-              {submitting ? "Submitting..." : "Submit & Continue"}
+            {error && <p style={{ ...shared.errorBox, marginTop: space.sm }}>{error}</p>}
+            <button type="submit" style={{ ...shared.btnPrimary, marginTop: space.sm }} disabled={submitting || !responseText.trim()}>
+              {submitting ? (<><InlineSpinner /> Submitting...</>) : "Submit & Continue"}
             </button>
           </form>
         )}
@@ -111,14 +141,14 @@ export default function DrillRunner() {
 
       <div style={styles.navRow}>
         <button
-          style={styles.navBtn}
+          style={shared.btnSecondary}
           disabled={currentIndex === 0}
           onClick={() => setCurrentIndex(currentIndex - 1)}
         >
           ← Previous
         </button>
         <button
-          style={styles.navBtn}
+          style={shared.btnSecondary}
           disabled={currentIndex === drill.steps.length - 1}
           onClick={() => setCurrentIndex(currentIndex + 1)}
         >
@@ -133,29 +163,44 @@ function PageWrap({ children }) {
   return (
     <div>
       <NavBar />
-      <div style={styles.page}>{children}</div>
+      <div style={{ ...shared.page, maxWidth: "680px" }}>{children}</div>
       <Footer />
     </div>
   );
 }
 
 const styles = {
-  page: { padding: "32px", fontFamily: "sans-serif", minHeight: "80vh", maxWidth: "700px" },
-  backBtn: { border: "none", background: "none", color: "#1E2761", cursor: "pointer", marginBottom: "12px", fontSize: "14px", padding: 0 },
-  premise: { color: "#555", marginBottom: "16px" },
-  progress: { marginBottom: "16px", fontSize: "13px", color: "#666" },
-  dot: { display: "inline-block", width: "10px", height: "10px", borderRadius: "50%", marginLeft: "6px" },
-  completeBanner: { backgroundColor: "#EAF7EE", color: "#1E7A34", padding: "10px 14px", borderRadius: "6px", marginBottom: "14px" },
-  stepCard: { backgroundColor: "#F5F7FC", padding: "24px", borderRadius: "10px" },
-  situationLabel: { fontWeight: "bold", fontSize: "13px", color: "#1E2761", marginBottom: "4px" },
-  situation: { marginBottom: "16px" },
-  questionLabel: { fontWeight: "bold", fontSize: "13px", color: "#1E2761", marginBottom: "4px" },
-  question: { marginBottom: "16px", fontWeight: "bold" },
-  textarea: { width: "100%", padding: "10px", borderRadius: "6px", border: "1px solid #ccc", boxSizing: "border-box", fontFamily: "sans-serif" },
-  submitBtn: { marginTop: "10px", padding: "10px 20px", borderRadius: "6px", border: "none", backgroundColor: "#1E2761", color: "#fff", cursor: "pointer", fontWeight: "bold" },
-  answeredBox: { backgroundColor: "#fff", padding: "14px", borderRadius: "6px", border: "1px solid #ddd" },
-  answeredLabel: { fontWeight: "bold", fontSize: "13px", color: "#666", marginBottom: "4px" },
-  error: { color: "#C0392B" },
-  navRow: { display: "flex", justifyContent: "space-between", marginTop: "16px" },
-  navBtn: { padding: "8px 16px", borderRadius: "6px", border: "1px solid #ccc", backgroundColor: "#fff", cursor: "pointer" },
+  backBtn: {
+    border: "none", background: "none", color: color.accent, cursor: "pointer",
+    marginBottom: space.md, fontSize: font.size.sm, padding: 0, fontWeight: 600,
+  },
+  premise: { color: color.textMuted, marginBottom: space.lg, fontSize: font.size.md, lineHeight: 1.5 },
+  progressRow: {
+    display: "flex", alignItems: "center", gap: space.sm, marginBottom: space.md, flexWrap: "wrap",
+  },
+  progressLabel: { fontSize: font.size.sm, fontWeight: 600, color: color.text },
+  dots: { display: "flex", gap: "6px" },
+  dot: { width: "9px", height: "9px", borderRadius: "50%", transition: "background-color 0.2s ease" },
+  dotActive: { boxShadow: `0 0 0 3px ${color.ice}` },
+  progressCount: { fontSize: font.size.xs, color: color.textFaint, marginLeft: "auto" },
+  completeBanner: {
+    backgroundColor: color.successBg, color: color.success, padding: `${space.sm} ${space.md}`,
+    borderRadius: radius.sm, marginBottom: space.md, display: "flex", alignItems: "center", gap: "8px",
+    fontSize: font.size.sm, fontWeight: 600,
+  },
+  stepCard: { ...shared.card, padding: space.lg, boxShadow: shadow.md },
+  sectionLabel: {
+    fontWeight: 700, fontSize: font.size.xs, color: color.textFaint,
+    textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "6px", marginTop: 0,
+  },
+  situation: { marginBottom: space.md, fontSize: font.size.md, lineHeight: 1.55, color: color.text },
+  question: { marginBottom: space.md, fontWeight: 700, fontSize: font.size.lg, color: color.navy, lineHeight: 1.4 },
+  textarea: {
+    width: "100%", padding: "12px 14px", borderRadius: radius.sm, border: `1px solid ${color.border}`,
+    boxSizing: "border-box", fontFamily: font.family, fontSize: font.size.md, resize: "vertical",
+  },
+  answeredBox: { backgroundColor: color.cardMuted, padding: space.md, borderRadius: radius.sm, border: `1px solid ${color.border}` },
+  answeredLabel: { fontWeight: 700, fontSize: font.size.xs, color: color.textMuted, marginBottom: "4px", marginTop: 0 },
+  answeredText: { margin: 0, fontSize: font.size.md, color: color.text, lineHeight: 1.5 },
+  navRow: { display: "flex", justifyContent: "space-between", marginTop: space.lg },
 };
