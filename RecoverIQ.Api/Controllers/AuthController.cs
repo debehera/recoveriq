@@ -49,9 +49,9 @@ namespace RecoverIQ.Api.Controllers
 
         private string GenerateJwtToken(string username, string role)
         {
-            var signingKey = _config["Jwt:SigningKey"]!;
-            var issuer = _config["Jwt:Issuer"]!;
-            var audience = _config["Jwt:Audience"]!;
+            var signingKey = Environment.GetEnvironmentVariable("JWT_SIGNING_KEY") ?? _config["Jwt:SigningKey"]!;
+            var issuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? _config["Jwt:Issuer"]!;
+            var audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? _config["Jwt:Audience"]!;
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(signingKey));
             var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
