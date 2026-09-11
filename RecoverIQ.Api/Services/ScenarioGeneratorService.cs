@@ -17,7 +17,7 @@ namespace RecoverIQ.Api.Services
 
         public async Task<GeneratedScenario> GenerateAsync(Runbook runbook)
         {
-            var apiKey = _config["Gemini:ApiKey"];
+            var apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY") ?? _config["Gemini:ApiKey"];
             if (string.IsNullOrWhiteSpace(apiKey))
             {
                 throw new InvalidOperationException("Gemini API key is not configured.");
@@ -58,9 +58,8 @@ Generate between 4 and 6 steps. Each step should escalate or evolve the situatio
             var json = JsonSerializer.Serialize(requestBody);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            
-           
             var url = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key={apiKey}";
+
             var response = await _httpClient.PostAsync(url, content);
 
             if (!response.IsSuccessStatusCode)

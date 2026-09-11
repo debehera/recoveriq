@@ -37,22 +37,36 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
+// Use a persistent disk path in production (Render), local file in development
+var dbPath = builder.Environment.IsDevelopment()
+    ? "Data Source=recoveriq.db"
+    : $"Data Source={Environment.GetEnvironmentVariable("DB_PATH") ?? "/var/data/recoveriq.db"}";
+
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection") ?? dbPath));
+
+// CORS: allow local dev AND the deployed frontend (set via environment variable on Render)
+var allowedOrigins = new List<string> { "http://localhost:5173" };
+var frontendUrl = Environment.GetEnvironmentVariable("FRONTEND_URL");
+if (!string.IsNullOrWhiteSpace(frontendUrl))
+{
+    allowedOrigins.Add(frontendUrl);
+}
 
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp", policy =>
     {
-        policy.WithOrigins("http://localhost:5173")
+        policy.WithOrigins(allowedOrigins.ToArray())
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
 });
 
-var jwtSigningKey = builder.Configuration["Jwt:SigningKey"]!;
-var jwtIssuer = builder.Configuration["Jwt:Issuer"]!;
-var jwtAudience = builder.Configuration["Jwt:Audience"]!;
+// JWT config: environment variables in production, appsettings.Development.json locally
+var jwtSigningKey = Environment.GetEnvironmentVariable("JWT_SIGNING_KEY") ?? builder.Configuration["Jwt:SigningKey"]!;
+var jwtIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? builder.Configuration["Jwt:Issuer"]!;
+var jwtAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? builder.Configuration["Jwt:Audience"]!;
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -77,6 +91,12 @@ var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+else
+{
+    // Enable Swagger in production too, so you can demo/test the API directly
     app.UseSwagger();
     app.UseSwaggerUI();
 }
