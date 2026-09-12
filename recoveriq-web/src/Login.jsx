@@ -18,7 +18,7 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const result = await login(username, password);
+      const result = await login(username.trim(), password.trim());
       saveSession(result);
 
       if (result.role === "Admin") {
