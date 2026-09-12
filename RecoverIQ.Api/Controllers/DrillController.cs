@@ -32,6 +32,7 @@ namespace RecoverIQ.Api.Controllers
                 .FirstOrDefaultAsync(r => r.Id == dto.RunbookId);
 
             if (runbook == null) return BadRequest(new { message = "Runbook not found." });
+            if (runbook.Steps.Count == 0) return BadRequest(new { message = "This runbook has no recovery steps to build a scenario from." });
 
             var assignee = await _db.Users.FirstOrDefaultAsync(u => u.Id == dto.AssignToUserId && u.Role == "TeamMember");
             if (assignee == null) return BadRequest(new { message = "Assigned user not found or is not a Team Member." });
@@ -72,9 +73,9 @@ namespace RecoverIQ.Api.Controllers
         {
             var username = User.FindFirstValue(ClaimTypes.Name)!;
             var role = User.FindFirstValue(ClaimTypes.Role)!;
-            var currentUser = await _db.Users.FirstAsync(u => u.Username == username);
+            var currentUser = await _db.Users.AsNoTracking().FirstAsync(u => u.Username == username);
 
-            var query = _db.Drills.Include(d => d.Runbook).Include(d => d.AssignedToUser).AsQueryable();
+            var query = _db.Drills.AsNoTracking().Include(d => d.Runbook).Include(d => d.AssignedToUser).AsQueryable();
 
             if (role != "Admin")
             {
@@ -88,7 +89,7 @@ namespace RecoverIQ.Api.Controllers
                 Id = d.Id,
                 Title = d.Title,
                 Status = d.Status,
-                RunbookName = d.Runbook!.Name,
+                RunbookName = d.Runbook?.Name ?? "(runbook deleted)",
                 AssignedToUsername = d.AssignedToUser?.Username,
                 CreatedAt = d.CreatedAt
             }));
@@ -99,9 +100,10 @@ namespace RecoverIQ.Api.Controllers
         {
             var username = User.FindFirstValue(ClaimTypes.Name)!;
             var role = User.FindFirstValue(ClaimTypes.Role)!;
-            var currentUser = await _db.Users.FirstAsync(u => u.Username == username);
+            var currentUser = await _db.Users.AsNoTracking().FirstAsync(u => u.Username == username);
 
             var drill = await _db.Drills
+                .AsNoTracking()
                 .Include(d => d.Runbook)
                 .Include(d => d.Steps).ThenInclude(s => s.Response)
                 .FirstOrDefaultAsync(d => d.Id == id);
@@ -120,6 +122,16 @@ namespace RecoverIQ.Api.Controllers
         [Authorize(Roles = "TeamMember")]
         public async Task<IActionResult> Respond(int id, int stepId, RespondToStepDto dto)
         {
+            var trimmed = dto.ResponseText?.Trim();
+            if (string.IsNullOrWhiteSpace(trimmed))
+            {
+                return BadRequest(new { message = "Please enter a response before submitting." });
+            }
+            if (trimmed.Length > 2000)
+            {
+                return BadRequest(new { message = "Response is too long (max 2000 characters)." });
+            }
+
             var username = User.FindFirstValue(ClaimTypes.Name)!;
             var currentUser = await _db.Users.FirstAsync(u => u.Username == username);
 
@@ -135,7 +147,7 @@ namespace RecoverIQ.Api.Controllers
 
             if (step.Response != null)
             {
-                step.Response.ResponseText = dto.ResponseText;
+                step.Response.ResponseText = trimmed;
                 step.Response.SubmittedAt = DateTime.UtcNow;
             }
             else
@@ -144,7 +156,7 @@ namespace RecoverIQ.Api.Controllers
                 {
                     DrillStepId = step.Id,
                     SubmittedByUserId = currentUser.Id,
-                    ResponseText = dto.ResponseText
+                    ResponseText = trimmed
                 });
             }
 
@@ -152,29 +164,31 @@ namespace RecoverIQ.Api.Controllers
 
             await _db.SaveChangesAsync();
 
-            // Re-check completion status
-            var allSteps = await _db.DrillSteps.Include(s => s.Response).Where(s => s.DrillId == drill.Id).ToListAsync();
+            var allSteps = await _db.DrillSteps.AsNoTracking().Include(s => s.Response).Where(s => s.DrillId == drill.Id).ToListAsync();
             if (allSteps.All(s => s.Response != null))
             {
                 drill.Status = "Completed";
                 await _db.SaveChangesAsync();
             }
 
-            return Ok(ToDetailDto(await _db.Drills
+            var refreshed = await _db.Drills
+                .AsNoTracking()
                 .Include(d => d.Runbook)
                 .Include(d => d.Steps).ThenInclude(s => s.Response)
-                .FirstAsync(d => d.Id == id)));
+                .FirstAsync(d => d.Id == id);
+
+            return Ok(ToDetailDto(refreshed));
         }
 
         private async Task<DrillSummaryDto> ToSummaryDto(int drillId)
         {
-            var d = await _db.Drills.Include(x => x.Runbook).Include(x => x.AssignedToUser).FirstAsync(x => x.Id == drillId);
+            var d = await _db.Drills.AsNoTracking().Include(x => x.Runbook).Include(x => x.AssignedToUser).FirstAsync(x => x.Id == drillId);
             return new DrillSummaryDto
             {
                 Id = d.Id,
                 Title = d.Title,
                 Status = d.Status,
-                RunbookName = d.Runbook!.Name,
+                RunbookName = d.Runbook?.Name ?? "(runbook deleted)",
                 AssignedToUsername = d.AssignedToUser?.Username,
                 CreatedAt = d.CreatedAt
             };
@@ -186,7 +200,7 @@ namespace RecoverIQ.Api.Controllers
             Title = d.Title,
             Premise = d.Premise,
             Status = d.Status,
-            RunbookName = d.Runbook?.Name ?? "",
+            RunbookName = d.Runbook?.Name ?? "(runbook deleted)",
             Steps = d.Steps.OrderBy(s => s.StepOrder).Select(s => new DrillStepDto
             {
                 Id = s.Id,

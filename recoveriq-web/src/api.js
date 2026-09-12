@@ -1,5 +1,14 @@
 const API_URL = import.meta.env.VITE_API_URL;
 
+function redirectToLoginOnAuthFailure() {
+  localStorage.removeItem("token");
+  localStorage.removeItem("role");
+  localStorage.removeItem("username");
+  if (window.location.pathname !== "/login") {
+    window.location.href = "/login";
+  }
+}
+
 export async function apiFetch(path, options = {}) {
   const token = localStorage.getItem("token");
 
@@ -12,10 +21,33 @@ export async function apiFetch(path, options = {}) {
     headers["Authorization"] = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${API_URL}${path}`, {
-    ...options,
-    headers,
-  });
+  let response;
+  try {
+    response = await fetch(`${API_URL}${path}`, {
+      ...options,
+      headers,
+    });
+  } catch {
+    throw new Error(
+      "Can't reach the server. If it's been idle, it may take up to a minute to wake up — please try again."
+    );
+  }
+
+  if (response.status === 401) {
+    // Token missing/expired/invalid — don't leave the user stuck on a broken screen.
+    const isLoginAttempt = path === "/api/auth/login";
+    if (!isLoginAttempt) {
+      redirectToLoginOnAuthFailure();
+    }
+    let errorMessage = "Invalid username or password.";
+    try {
+      const body = await response.json();
+      if (body.message) errorMessage = body.message;
+    } catch {
+      // no JSON body
+    }
+    throw new Error(errorMessage);
+  }
 
   if (!response.ok) {
     let errorMessage = `Request failed (${response.status})`;

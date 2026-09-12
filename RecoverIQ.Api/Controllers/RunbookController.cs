@@ -24,6 +24,7 @@ namespace RecoverIQ.Api.Controllers
         public async Task<IActionResult> GetAll()
         {
             var runbooks = await _db.Runbooks
+                .AsNoTracking()
                 .Include(r => r.Steps)
                 .OrderByDescending(r => r.CreatedAt)
                 .ToListAsync();
@@ -35,6 +36,7 @@ namespace RecoverIQ.Api.Controllers
         public async Task<IActionResult> GetById(int id)
         {
             var runbook = await _db.Runbooks
+                .AsNoTracking()
                 .Include(r => r.Steps)
                 .FirstOrDefaultAsync(r => r.Id == id);
 
@@ -46,9 +48,19 @@ namespace RecoverIQ.Api.Controllers
         [HttpPost]
         public async Task<IActionResult> Create(RunbookCreateDto dto)
         {
-            if (dto.Steps == null || dto.Steps.Count == 0 || dto.Steps.Any(string.IsNullOrWhiteSpace))
+            var cleanSteps = (dto.Steps ?? new List<string>())
+                .Select(s => s?.Trim())
+                .Where(s => !string.IsNullOrWhiteSpace(s))
+                .ToList();
+
+            if (cleanSteps.Count == 0)
             {
                 return BadRequest(new { message = "At least one non-empty recovery step is required." });
+            }
+
+            if (string.IsNullOrWhiteSpace(dto.Name) || string.IsNullOrWhiteSpace(dto.SystemName))
+            {
+                return BadRequest(new { message = "Name and system name are required." });
             }
 
             var username = User.FindFirstValue(ClaimTypes.Name)!;
@@ -56,15 +68,15 @@ namespace RecoverIQ.Api.Controllers
 
             var runbook = new Runbook
             {
-                Name = dto.Name,
-                SystemName = dto.SystemName,
+                Name = dto.Name.Trim(),
+                SystemName = dto.SystemName.Trim(),
                 RtoMinutes = dto.RtoMinutes,
                 RpoMinutes = dto.RpoMinutes,
                 CreatedByUserId = user.Id,
-                Steps = dto.Steps.Select((s, i) => new RunbookStep
+                Steps = cleanSteps.Select((s, i) => new RunbookStep
                 {
                     StepOrder = i + 1,
-                    Description = s
+                    Description = s!
                 }).ToList()
             };
 
@@ -77,9 +89,19 @@ namespace RecoverIQ.Api.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, RunbookCreateDto dto)
         {
-            if (dto.Steps == null || dto.Steps.Count == 0 || dto.Steps.Any(string.IsNullOrWhiteSpace))
+            var cleanSteps = (dto.Steps ?? new List<string>())
+                .Select(s => s?.Trim())
+                .Where(s => !string.IsNullOrWhiteSpace(s))
+                .ToList();
+
+            if (cleanSteps.Count == 0)
             {
                 return BadRequest(new { message = "At least one non-empty recovery step is required." });
+            }
+
+            if (string.IsNullOrWhiteSpace(dto.Name) || string.IsNullOrWhiteSpace(dto.SystemName))
+            {
+                return BadRequest(new { message = "Name and system name are required." });
             }
 
             var runbook = await _db.Runbooks
@@ -88,16 +110,16 @@ namespace RecoverIQ.Api.Controllers
 
             if (runbook == null) return NotFound(new { message = "Runbook not found." });
 
-            runbook.Name = dto.Name;
-            runbook.SystemName = dto.SystemName;
+            runbook.Name = dto.Name.Trim();
+            runbook.SystemName = dto.SystemName.Trim();
             runbook.RtoMinutes = dto.RtoMinutes;
             runbook.RpoMinutes = dto.RpoMinutes;
 
             _db.RunbookSteps.RemoveRange(runbook.Steps);
-            runbook.Steps = dto.Steps.Select((s, i) => new RunbookStep
+            runbook.Steps = cleanSteps.Select((s, i) => new RunbookStep
             {
                 StepOrder = i + 1,
-                Description = s
+                Description = s!
             }).ToList();
 
             await _db.SaveChangesAsync();
@@ -110,6 +132,12 @@ namespace RecoverIQ.Api.Controllers
         {
             var runbook = await _db.Runbooks.FindAsync(id);
             if (runbook == null) return NotFound(new { message = "Runbook not found." });
+
+            var hasDrills = await _db.Drills.AnyAsync(d => d.RunbookId == id);
+            if (hasDrills)
+            {
+                return Conflict(new { message = "This runbook can't be deleted because it has generated drills. Delete isn't available for runbooks with drill history, to preserve the audit record." });
+            }
 
             _db.Runbooks.Remove(runbook);
             await _db.SaveChangesAsync();

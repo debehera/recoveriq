@@ -7,6 +7,8 @@ import DrillRunner from "./DrillRunner";
 import DrillList from "./DrillList";
 import DrillReview from "./DrillReview";
 import ProtectedRoute from "./ProtectedRoute";
+import ErrorBoundary from "./ErrorBoundary";
+import NotFound from "./NotFound";
 import { getSession } from "./auth";
 
 function RootRedirect() {
@@ -18,34 +20,38 @@ function RootRedirect() {
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<RootRedirect />} />
-        <Route path="/login" element={<Login />} />
+    <ErrorBoundary>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<RootRedirect />} />
+          <Route path="/login" element={<Login />} />
 
-        <Route path="/runbooks" element={
-          <ProtectedRoute allowedRole="Admin"><RunbookList /></ProtectedRoute>
-        } />
-        <Route path="/runbooks/new" element={
-          <ProtectedRoute allowedRole="Admin"><RunbookForm /></ProtectedRoute>
-        } />
-        <Route path="/runbooks/:id/edit" element={
-          <ProtectedRoute allowedRole="Admin"><RunbookForm /></ProtectedRoute>
-        } />
-        <Route path="/drills" element={
-          <ProtectedRoute allowedRole="Admin"><DrillList /></ProtectedRoute>
-        } />
-        <Route path="/drills/:id" element={
-          <ProtectedRoute allowedRole="Admin"><DrillReview /></ProtectedRoute>
-        } />
+          <Route path="/runbooks" element={
+            <ProtectedRoute allowedRole="Admin"><RunbookList /></ProtectedRoute>
+          } />
+          <Route path="/runbooks/new" element={
+            <ProtectedRoute allowedRole="Admin"><RunbookForm /></ProtectedRoute>
+          } />
+          <Route path="/runbooks/:id/edit" element={
+            <ProtectedRoute allowedRole="Admin"><RunbookForm /></ProtectedRoute>
+          } />
+          <Route path="/drills" element={
+            <ProtectedRoute allowedRole="Admin"><DrillList /></ProtectedRoute>
+          } />
+          <Route path="/drills/:id" element={
+            <ProtectedRoute allowedRole="Admin"><DrillReview /></ProtectedRoute>
+          } />
 
-        <Route path="/my-drills" element={
-          <ProtectedRoute allowedRole="TeamMember"><MyDrills /></ProtectedRoute>
-        } />
-        <Route path="/my-drills/:id" element={
-          <ProtectedRoute allowedRole="TeamMember"><DrillRunner /></ProtectedRoute>
-        } />
-      </Routes>
-    </BrowserRouter>
+          <Route path="/my-drills" element={
+            <ProtectedRoute allowedRole="TeamMember"><MyDrills /></ProtectedRoute>
+          } />
+          <Route path="/my-drills/:id" element={
+            <ProtectedRoute allowedRole="TeamMember"><DrillRunner /></ProtectedRoute>
+          } />
+
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </BrowserRouter>
+    </ErrorBoundary>
   );
 }

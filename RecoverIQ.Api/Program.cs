@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using RecoverIQ.Api.Data;
+using RecoverIQ.Api.Middleware;
 using RecoverIQ.Api.Models;
 using RecoverIQ.Api.Services;
 using System.Text;
@@ -37,15 +38,13 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-// Use a persistent disk path in production (Render), local file in development
 var dbPath = builder.Environment.IsDevelopment()
     ? "Data Source=recoveriq.db"
-    : $"Data Source={Environment.GetEnvironmentVariable("DB_PATH") ?? "/var/data/recoveriq.db"}";
+    : $"Data Source={Environment.GetEnvironmentVariable("DB_PATH") ?? "/app/recoveriq.db"}";
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection") ?? dbPath));
 
-// CORS: allow local dev AND the deployed frontend (set via environment variable on Render)
 var allowedOrigins = new List<string> { "http://localhost:5173" };
 var frontendUrl = Environment.GetEnvironmentVariable("FRONTEND_URL");
 if (!string.IsNullOrWhiteSpace(frontendUrl))
@@ -63,7 +62,6 @@ builder.Services.AddCors(options =>
     });
 });
 
-// JWT config: environment variables in production, appsettings.Development.json locally
 var jwtSigningKey = Environment.GetEnvironmentVariable("JWT_SIGNING_KEY") ?? builder.Configuration["Jwt:SigningKey"]!;
 var jwtIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? builder.Configuration["Jwt:Issuer"]!;
 var jwtAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? builder.Configuration["Jwt:Audience"]!;
@@ -89,17 +87,11 @@ builder.Services.AddHttpClient<IScenarioGeneratorService, ScenarioGeneratorServi
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-else
-{
-    // Enable Swagger in production too, so you can demo/test the API directly
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+// Must be first — catches exceptions from everything downstream, including auth/CORS.
+app.UseGlobalExceptionHandling();
+
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseCors("AllowReactApp");
 app.UseAuthentication();

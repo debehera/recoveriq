@@ -19,12 +19,20 @@ export default function NavBar() {
   }
 
   return (
-    <div style={styles.bar} className="riq-navbar">
+    <nav style={styles.bar} className="riq-navbar" aria-label="Main navigation">
       <div
         style={styles.left}
         onClick={() => navigate(session.role === "Admin" ? "/runbooks" : "/my-drills")}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            navigate(session.role === "Admin" ? "/runbooks" : "/my-drills");
+          }
+        }}
       >
-        <span style={styles.logoMark}>⛨</span> RecoverIQ
+        <span aria-hidden="true" style={styles.logoMark}>⛨</span> RecoverIQ
       </div>
       <div style={styles.center} className="riq-navbar-center">
         {session.role === "Admin" ? (
@@ -43,7 +51,7 @@ export default function NavBar() {
           Logout
         </button>
       </div>
-    </div>
+    </nav>
   );
 }
 
@@ -52,6 +60,15 @@ function NavLink({ label, active, onClick }) {
     <span
       style={{ ...styles.link, ...(active ? styles.linkActive : {}) }}
       onClick={onClick}
+      role="button"
+      tabIndex={0}
+      aria-current={active ? "page" : undefined}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onClick();
+        }
+      }}
     >
       {label}
     </span>

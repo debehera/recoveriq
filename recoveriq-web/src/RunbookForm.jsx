@@ -49,23 +49,45 @@ export default function RunbookForm() {
     setSteps(steps.filter((_, i) => i !== index));
   }
 
+  function validate() {
+    if (!name.trim()) return "Runbook name is required.";
+    if (!systemName.trim()) return "System name is required.";
+
+    const rto = Number(rtoMinutes);
+    if (rtoMinutes === "" || !Number.isFinite(rto) || rto <= 0) {
+      return "RTO must be a whole number greater than 0.";
+    }
+
+    const rpo = Number(rpoMinutes);
+    if (rpoMinutes === "" || !Number.isFinite(rpo) || rpo <= 0) {
+      return "RPO must be a whole number greater than 0.";
+    }
+
+    const cleanSteps = steps.map((s) => s.trim()).filter(Boolean);
+    if (cleanSteps.length === 0) {
+      return "Add at least one recovery step.";
+    }
+
+    return null;
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
 
-    const cleanSteps = steps.map((s) => s.trim()).filter(Boolean);
-    if (cleanSteps.length === 0) {
-      setError("Add at least one recovery step.");
+    const validationError = validate();
+    if (validationError) {
+      setError(validationError);
       return;
     }
 
     setSaving(true);
     const payload = {
-      name,
-      systemName,
+      name: name.trim(),
+      systemName: systemName.trim(),
       rtoMinutes: Number(rtoMinutes),
       rpoMinutes: Number(rpoMinutes),
-      steps: cleanSteps,
+      steps: steps.map((s) => s.trim()).filter(Boolean),
     };
 
     try {
@@ -101,21 +123,21 @@ export default function RunbookForm() {
           {isEdit ? "Update the recovery plan details below." : "Document a recovery plan for a critical system."}
         </p>
 
-        <form onSubmit={handleSubmit} style={styles.card}>
+        <form onSubmit={handleSubmit} style={styles.card} noValidate>
           <label style={shared.label} htmlFor="name">Runbook Name</label>
-          <input id="name" style={shared.input} value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Payment Gateway Recovery" required />
+          <input id="name" style={shared.input} value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Payment Gateway Recovery" maxLength={150} />
 
           <label style={shared.label} htmlFor="systemName">System Name</label>
-          <input id="systemName" style={shared.input} value={systemName} onChange={(e) => setSystemName(e.target.value)} placeholder="e.g. Payment Gateway" required />
+          <input id="systemName" style={shared.input} value={systemName} onChange={(e) => setSystemName(e.target.value)} placeholder="e.g. Payment Gateway" maxLength={150} />
 
           <div style={styles.row}>
             <div style={{ flex: 1 }}>
               <label style={shared.label} htmlFor="rto">RTO (minutes)</label>
-              <input id="rto" style={shared.input} type="number" min="1" value={rtoMinutes} onChange={(e) => setRtoMinutes(e.target.value)} required />
+              <input id="rto" style={shared.input} type="number" min="1" step="1" value={rtoMinutes} onChange={(e) => setRtoMinutes(e.target.value)} />
             </div>
             <div style={{ flex: 1 }}>
               <label style={shared.label} htmlFor="rpo">RPO (minutes)</label>
-              <input id="rpo" style={shared.input} type="number" min="1" value={rpoMinutes} onChange={(e) => setRpoMinutes(e.target.value)} required />
+              <input id="rpo" style={shared.input} type="number" min="1" step="1" value={rpoMinutes} onChange={(e) => setRpoMinutes(e.target.value)} />
             </div>
           </div>
 
@@ -128,6 +150,7 @@ export default function RunbookForm() {
                 value={step}
                 onChange={(e) => updateStep(i, e.target.value)}
                 placeholder="Describe this recovery step"
+                maxLength={500}
               />
               {steps.length > 1 && (
                 <button type="button" style={styles.removeBtn} onClick={() => removeStep(i)} aria-label={`Remove step ${i + 1}`}>
@@ -140,7 +163,7 @@ export default function RunbookForm() {
             + Add Step
           </button>
 
-          {error && <p style={{ ...shared.errorBox, marginTop: space.md }}>{error}</p>}
+          {error && <p role="alert" style={{ ...shared.errorBox, marginTop: space.md }}>{error}</p>}
 
           <div style={styles.actions}>
             <button type="button" style={shared.btnSecondary} onClick={() => navigate("/runbooks")}>

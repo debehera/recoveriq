@@ -6,6 +6,8 @@ import Footer from "./Footer";
 import { PageLoading, InlineSpinner } from "./Loading";
 import { color, font, radius, space, shared, shadow } from "./theme";
 
+const MAX_RESPONSE_LENGTH = 2000;
+
 export default function DrillRunner() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -38,14 +40,18 @@ export default function DrillRunner() {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (!responseText.trim()) return;
+    const trimmed = responseText.trim();
+    if (!trimmed) {
+      setError("Please enter a response before submitting.");
+      return;
+    }
 
     setSubmitting(true);
     setError("");
     const step = drill.steps[currentIndex];
 
     try {
-      const updated = await respondToStep(drill.id, step.id, responseText.trim());
+      const updated = await respondToStep(drill.id, step.id, trimmed);
       setDrill(updated);
       setResponseText("");
 
@@ -78,6 +84,7 @@ export default function DrillRunner() {
   const step = drill.steps[currentIndex];
   const isCompleted = drill.status === "Completed";
   const answeredCount = drill.steps.filter((s) => s.response).length;
+  const charsRemaining = MAX_RESPONSE_LENGTH - responseText.length;
 
   return (
     <PageWrap>
@@ -105,7 +112,7 @@ export default function DrillRunner() {
 
       {isCompleted && (
         <div style={styles.completeBanner}>
-          <span style={{ fontSize: "16px" }}>✅</span>
+          <span aria-hidden="true" style={{ fontSize: "16px" }}>✅</span>
           <span>This drill is complete. Thank you for participating.</span>
         </div>
       )}
@@ -127,11 +134,19 @@ export default function DrillRunner() {
               style={styles.textarea}
               rows={4}
               value={responseText}
-              onChange={(e) => setResponseText(e.target.value)}
+              onChange={(e) => setResponseText(e.target.value.slice(0, MAX_RESPONSE_LENGTH))}
               placeholder="Describe what you would do..."
               autoFocus
+              maxLength={MAX_RESPONSE_LENGTH}
+              aria-describedby="char-count"
             />
-            {error && <p style={{ ...shared.errorBox, marginTop: space.sm }}>{error}</p>}
+            <p id="char-count" style={{
+              ...styles.charCount,
+              color: charsRemaining < 100 ? color.warning : color.textFaint,
+            }}>
+              {charsRemaining} characters remaining
+            </p>
+            {error && <p role="alert" style={{ ...shared.errorBox, marginTop: space.sm }}>{error}</p>}
             <button type="submit" style={{ ...shared.btnPrimary, marginTop: space.sm }} disabled={submitting || !responseText.trim()}>
               {submitting ? (<><InlineSpinner /> Submitting...</>) : "Submit & Continue"}
             </button>
@@ -199,6 +214,7 @@ const styles = {
     width: "100%", padding: "12px 14px", borderRadius: radius.sm, border: `1px solid ${color.border}`,
     boxSizing: "border-box", fontFamily: font.family, fontSize: font.size.md, resize: "vertical",
   },
+  charCount: { fontSize: font.size.xs, margin: "6px 0 0", textAlign: "right" },
   answeredBox: { backgroundColor: color.cardMuted, padding: space.md, borderRadius: radius.sm, border: `1px solid ${color.border}` },
   answeredLabel: { fontWeight: 700, fontSize: font.size.xs, color: color.textMuted, marginBottom: "4px", marginTop: 0 },
   answeredText: { margin: 0, fontSize: font.size.md, color: color.text, lineHeight: 1.5 },
