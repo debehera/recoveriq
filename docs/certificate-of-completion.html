@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Certificate of Completion — RecoverIQ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  @page { size: A4 landscape; margin: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #EDEBE3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 24px;
+  }
+  .cert {
+    background: #FBFAF7;
+    width: 297mm;
+    height: 210mm;
+    max-width: 100%;
+    position: relative;
+    padding: 56px 72px;
+    border: 1px solid #1E2761;
+    display: flex;
+    flex-direction: column;
+  }
+  .cert::before {
+    content: '';
+    position: absolute;
+    inset: 14px;
+    border: 1px solid #CADCFC;
+    pointer-events: none;
+  }
+  .top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+  .wordmark {
+    font-family: 'Newsreader', serif;
+    font-weight: 600;
+    font-size: 22px;
+    color: #1E2761;
+    letter-spacing: 0.01em;
+  }
+  .wordmark span { color: #3D5AFE; }
+  .cert-id {
+    font-size: 11px;
+    color: #8B8A80;
+    text-align: right;
+  }
+  .body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 0 40px;
+  }
+  .eyebrow {
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    color: #3D5AFE;
+    font-weight: 600;
+    margin-bottom: 22px;
+  }
+  .presented {
+    font-size: 15px;
+    color: #6B6A63;
+    margin-bottom: 6px;
+  }
+  .name {
+    font-family: 'Newsreader', serif;
+    font-size: 44px;
+    font-weight: 500;
+    color: #1E2761;
+    border-bottom: 1.5px solid #CADCFC;
+    padding: 0 12px 10px;
+    margin-bottom: 22px;
+  }
+  .desc {
+    font-size: 15px;
+    color: #23241F;
+    max-width: 640px;
+    line-height: 1.65;
+    margin-bottom: 22px;
+  }
+  .desc strong { color: #1E2761; }
+  .project-line {
+    font-family: 'Newsreader', serif;
+    font-style: italic;
+    font-size: 19px;
+    color: #1E2761;
+    margin-bottom: 6px;
+  }
+  .version-badge {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 600;
+    color: #1E2761;
+    background: #CADCFC;
+    padding: 4px 14px;
+    border-radius: 999px;
+    margin-bottom: 28px;
+  }
+  .mentor-line {
+    font-size: 13px;
+    color: #6B6A63;
+    max-width: 560px;
+  }
+  .bottom-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    padding-top: 24px;
+  }
+  .sign-block { text-align: left; }
+  .sign-line {
+    font-family: 'Newsreader', serif;
+    font-style: italic;
+    font-size: 17px;
+    color: #1E2761;
+    border-bottom: 1px solid #23241F;
+    padding-bottom: 4px;
+    margin-bottom: 4px;
+    min-width: 200px;
+  }
+  .sign-caption {
+    font-size: 11px;
+    color: #8B8A80;
+  }
+  .date-block { text-align: right; }
+  .links {
+    display: flex;
+    gap: 18px;
+    font-size: 12px;
+    margin-top: 8px;
+  }
+  .links a { color: #3D5AFE; text-decoration: none; }
+
+  .print-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #1E2761;
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+  }
+  @media print {
+    body { background: #fff; padding: 0; }
+    .print-btn { display: none; }
+    .cert { border: none; width: 100%; height: 100vh; }
+  }
+</style>
+</head>
+<body>
+
+<button class="print-btn" onclick="window.print()">Print / Save as PDF</button>
+
+<div class="cert">
+  <div class="top-row">
+    <div class="wordmark">AB <span>Talks</span></div>
+    <div class="cert-id">Certificate No. RECOVERIQ-V1-2026</div>
+  </div>
+
+  <div class="body">
+    <div class="eyebrow">CERTIFICATE OF COMPLETION</div>
+    <div class="presented">This certifies that</div>
+    <div class="name">Debraj Behera</div>
+    <div class="desc">
+      has successfully completed the <strong>AB Talks 10-Day Capstone Sprint</strong>,
+      part of the <strong>AB Talks 60-Day Claude AI Challenge</strong>, by designing, building,
+      testing, and deploying a complete production-ready application following a full
+      software development lifecycle — from requirements gathering to a live, public v1.0 release.
+    </div>
+    <div class="project-line">RecoverIQ — AI-Generated Disaster Recovery Drills</div>
+    <div class="version-badge">Version 1.0.0</div>
+    <div class="mentor-line">
+      Built with Claude (free tier) as AI pair programmer and project mentor throughout the sprint.
+    </div>
+  </div>
+
+  <div class="bottom-row">
+    <div class="sign-block">
+      <div class="sign-line">AB Talks</div>
+      <div class="sign-caption">Program Organizer</div>
+    </div>
+    <div class="date-block">
+      <div class="sign-line">14 September 2026</div>
+      <div class="sign-caption">Date of Completion</div>
+      <div class="links">
+        <a href="https://www.abtalks.in/">abtalks.in</a>
+        <a href="https://www.linkedin.com/company/abtalks-on-ai/">LinkedIn</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
